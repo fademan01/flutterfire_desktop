@@ -446,7 +446,7 @@ Map<AuthErrorCode, String> verbose = {
   AuthErrorCode.USER_MISMATCH:
       'The supplied credentials do not correspond to the previously signed in user.',
   AuthErrorCode.NO_CURRENT_USER: 'No user currently signed in.',
-  AuthErrorCode.WEAK_PASSWORD: 'Password should be at least 6 characters.',
+  AuthErrorCode.WEAK_PASSWORD: 'Password should be at least 6 characters',
   AuthErrorCode.WEB_STORAGE_UNSUPPORTED:
       'This browser is not supported or 3rd party cookies and data may be disabled.',
   AuthErrorCode.WRONG_PASSWORD:

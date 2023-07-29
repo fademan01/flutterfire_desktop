@@ -16,6 +16,8 @@ auth_dart.AuthCredential mapAuthCredentialFromPlatform(
       email: credential.email,
       password: credential.password!,
     );
+  } else if (credential is PhoneAuthCredential) {
+    return mapPhoneCredentialFromPlatform(credential);
   } else if (credential is GoogleAuthCredential) {
     return auth_dart.GoogleAuthProvider.credential(
       idToken: credential.idToken,

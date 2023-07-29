@@ -22,7 +22,11 @@ class User extends UserPlatform {
 
   @override
   Future<void> delete() async {
-    await _user.delete();
+    try {
+      await _user.delete();
+    } catch (e) {
+      throw getFirebaseAuthException(e);
+    }
   }
 
   @override
@@ -35,8 +39,12 @@ class User extends UserPlatform {
   bool get emailVerified => _user.emailVerified;
 
   @override
-  Future<String> getIdToken(bool forceRefresh) {
-    return _user.getIdToken(forceRefresh);
+  Future<String> getIdToken(bool forceRefresh) async {
+    try {
+      return await _user.getIdToken(forceRefresh);
+    } catch (e) {
+      throw getFirebaseAuthException(e);
+    }
   }
 
   @override
@@ -193,9 +201,19 @@ class User extends UserPlatform {
   /// Update the user's profile.
   @override
   Future<void> updateProfile(Map<String, dynamic> newProfile) {
+    String? newDisplayName = '';
+    if (newProfile.containsKey('displayName')) {
+      newDisplayName = newProfile['displayName'];
+    }
+
+    String? newPhoto = '';
+    if (newProfile.containsKey('photoURL')) {
+      newPhoto = newProfile['photoURL'];
+    }
+
     return _user.updateProfile(
-      displayName: newProfile['displayName'],
-      photoUrl: newProfile['photoURL'],
+      displayName: newDisplayName,
+      photoUrl: newPhoto,
     );
   }
 

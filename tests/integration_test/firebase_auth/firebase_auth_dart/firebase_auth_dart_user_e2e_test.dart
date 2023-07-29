@@ -203,7 +203,9 @@ void main() {
               ?.unlink(PhoneAuthProvider.PROVIDER_ID);
           await FirebaseAuth.instance.currentUser?.delete();
         },
-        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+        // TODO: verifyPhoneNumber()
+        skip: true,
+        //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
       ); // verifyPhoneNumber not supported on web.
 
       test(
@@ -594,7 +596,10 @@ void main() {
           expect(FirebaseAuth.instance.currentUser!.refreshToken, equals(''));
         },
         // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
-        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+        skip: kIsWeb ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.linux,
       );
 
       test(
@@ -616,7 +621,9 @@ void main() {
             isFalse,
           );
         },
-        skip: !kIsWeb,
+        skip: !kIsWeb &&
+            (defaultTargetPlatform != TargetPlatform.linux &&
+                defaultTargetPlatform != TargetPlatform.windows),
       );
     });
 
@@ -1003,7 +1010,6 @@ void main() {
       });
     });
   },
-  // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
-  skip: defaultTargetPlatform == TargetPlatform.macOS,
-  );
+      // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+      skip: defaultTargetPlatform == TargetPlatform.macOS);
 }

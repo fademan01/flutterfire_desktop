@@ -15,16 +15,22 @@ class UserCredential extends UserCredentialPlatform {
     auth_dart.UserCredential ipUserCredential,
   ) : super(
           auth: auth,
-          additionalUserInfo: AdditionalUserInfo(
-            isNewUser: ipUserCredential.additionalUserInfo!.isNewUser,
-            profile: ipUserCredential.additionalUserInfo?.profile,
-            providerId: ipUserCredential.additionalUserInfo?.providerId,
-            username: ipUserCredential.additionalUserInfo?.username,
-          ),
-          credential: AuthCredential(
-            providerId: ipUserCredential.credential!.providerId,
-            signInMethod: ipUserCredential.credential!.signInMethod,
-          ),
-          user: User(auth, ipUserCredential.user!),
+          additionalUserInfo: ipUserCredential.additionalUserInfo == null
+              ? null
+              : AdditionalUserInfo(
+                  isNewUser: ipUserCredential.additionalUserInfo!.isNewUser,
+                  profile: ipUserCredential.additionalUserInfo?.profile ?? {},
+                  providerId: ipUserCredential.additionalUserInfo?.providerId,
+                  username: ipUserCredential.additionalUserInfo?.username,
+                ),
+          credential: ipUserCredential.credential == null
+              ? null
+              : AuthCredential(
+                  providerId: ipUserCredential.credential!.providerId,
+                  signInMethod: ipUserCredential.credential!.signInMethod,
+                ),
+          user: ipUserCredential.user == null
+              ? null
+              : User(auth, ipUserCredential.user!),
         );
 }
