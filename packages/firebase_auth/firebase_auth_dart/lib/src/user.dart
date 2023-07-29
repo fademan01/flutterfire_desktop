@@ -468,6 +468,7 @@ class User {
         uid,
         displayName: displayName,
       );
+      await reload();
     } catch (e) {
       rethrow;
     }
@@ -487,6 +488,7 @@ class User {
         uid,
         photoUrl: photoUrl,
       );
+      await reload();
     } catch (e) {
       rethrow;
     }
