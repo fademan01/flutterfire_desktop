@@ -65,8 +65,10 @@ jobs:
       - name: 'Run Tests'
         working-directory: tests
         run: |
-          xvfb-run -a flutter drive -d linux --no-pub --target=./test_driver/driver_e2e.dart --dart-define=CI=true
-
+          xvfb-run -a flutter drive -d linux --no-pub \
+          --target=./integration_test/e2e_test.dart --driver=./test_driver/integration_test.dart \
+          --dart-define=CI=true
+          
   test_windows:
     runs-on: windows-latest
     timeout-minutes: 15
@@ -88,7 +90,9 @@ jobs:
         run: cd .\.github\workflows\scripts && .\start-firebase-emulator.bat
       - name: 'Run Tests'
         working-directory: tests
-        run: cmd /c flutter drive -d windows --no-pub --target=./test_driver/driver_e2e.dart --dart-define=CI=true
+        run: cmd /c flutter drive -d windows --no-pub \
+              --target=.\integration_test\e2e_test.dart --driver=.\test_driver\integration_test.dart \
+              --dart-define=CI=true
 
   # test_macos:
   #   runs-on: macos-latest
@@ -141,4 +145,6 @@ jobs:
   #       run: cd ./.github/workflows/scripts && ./start-firebase-emulator.sh
   #     - name: 'Run Tests'
   #       working-directory: tests
-  #       run: flutter drive -d macos --no-pub --target=./test_driver/driver_e2e.dart --dart-define=CI=true
+  #       run: flutter drive -d macos --no-pub \
+  #            --target=./integration_test/e2e_test.dart --driver=./test_driver/integration_test.dart \
+  #            --dart-define=CI=true
