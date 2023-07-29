@@ -29,7 +29,7 @@ scripts:
   test:e2e:
     run: |
       melos exec -c 1 --fail-fast -- \
-        "flutter drive --no-pub --target=./test_driver/driver_e2e.dart"
+        "flutter drive --driver=test_driver/integration_test.dart --target=integration_test/e2e_test.dart -d linux --dart-define=CI=true"
     description: |
       Run all e2e tests.
     packageFilters:

@@ -1,28 +1,54 @@
-// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
+// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:firebase_auth_dart/firebase_auth_dart.dart';
+import 'package:collection/collection.dart' show IterableExtension;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-const testEmail = 'test@test.com';
-const testDisabledEmail = 'disabled@example.com';
-const testPassword = 'password';
-const testPhoneNumber = '+447111555666';
-
-const photoURL =
-    'https://images.pexels.com/photos/320014/pexels-photo-320014.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260';
-const displayName = 'Invertase';
-const mockOobCode = 'code';
+const String testDisabledEmail = 'disabled@example.com';
+const String testEmail = 'test@example.com';
+const String testPassword = 'testpassword';
+const String testPhoneNumber = '+447111555666';
 
 const _testFirebaseProjectId = 'react-native-firebase-testing';
 const testEmulatorHost = 'localhost';
 const testEmulatorPort = 9099;
 
-const bool useEmulator = true;
+class EmulatorOobCode {
+  @protected
+  EmulatorOobCode({
+    this.type,
+    this.email,
+    this.oobCode,
+    this.oobLink,
+  });
+
+  final EmulatorOobCodeType? type;
+  final String? email;
+  final String? oobCode;
+  final String? oobLink;
+}
+
+enum EmulatorOobCodeType {
+  emailSignIn,
+  passwordReset,
+  recoverEmail,
+  verifyEmail,
+}
+
+String generateRandomEmail({
+  String prefix = '',
+  String suffix = '@foo.bar',
+}) {
+  var uuid = createCryptoRandomString();
+  var testEmail = prefix + uuid + suffix;
+  return testEmail;
+}
 
 /// Deletes all users from the Auth emulator.
 Future<void> emulatorClearAllUsers() async {
@@ -33,6 +59,22 @@ Future<void> emulatorClearAllUsers() async {
     headers: {
       'Authorization': 'Bearer owner',
     },
+  );
+}
+
+/// Disable a specific user by uid.
+Future<void> emulatorDisableUser(String uid) async {
+  String body = jsonEncode({'disableUser': true, 'localId': uid});
+  await http.post(
+    Uri.parse(
+      'http://$testEmulatorHost:$testEmulatorPort/identitytoolkit.googleapis.com/v1/accounts:update',
+    ),
+    headers: {
+      'Authorization': 'Bearer owner',
+      'Content-Type': 'application/json',
+      'Content-Length': '${body.length}',
+    },
+    body: body,
   );
 }
 
@@ -56,6 +98,67 @@ Future<String?> emulatorPhoneVerificationCode(String phoneNumber) async {
   )['code'];
 }
 
+/// Verify an email with an oobCode
+///
+/// Check [emulatorOutOfBandCode] to get an oobCode.
+Future<void> emulatorVerifyEmail(String oobCode) async {
+  await http.get(
+    Uri.parse(
+      'http://$testEmulatorHost:$testEmulatorPort/emulator/action?mode=verifyEmail&lang=en&oobCode=$oobCode&apiKey=fake-api-key',
+    ),
+  );
+}
+
+/// Retrieve a out of band authentication code from the emulator. Useful for testing
+/// APIs such as email verification and password resetting.
+Future<EmulatorOobCode?> emulatorOutOfBandCode(
+  String email,
+  EmulatorOobCodeType type,
+) async {
+  final response = await http.get(
+    Uri.parse(
+      'http://$testEmulatorHost:$testEmulatorPort/emulator/v1/projects/$_testFirebaseProjectId/oobCodes',
+    ),
+    headers: {
+      'Authorization': 'Bearer owner',
+    },
+  );
+
+  String? requestType;
+  switch (type) {
+    case EmulatorOobCodeType.emailSignIn:
+      requestType = 'EMAIL_SIGNIN';
+      break;
+    case EmulatorOobCodeType.passwordReset:
+      requestType = 'PASSWORD_RESET';
+      break;
+    case EmulatorOobCodeType.recoverEmail:
+      requestType = 'RECOVER_EMAIL';
+      break;
+    case EmulatorOobCodeType.verifyEmail:
+      requestType = 'VERIFY_EMAIL';
+      break;
+  }
+
+  final responseBody = Map<String, dynamic>.from(jsonDecode(response.body));
+  final oobCodes = List<Map<String, dynamic>>.from(responseBody['oobCodes']);
+  final oobCode = oobCodes.reversed.firstWhereOrNull(
+    (oobCode) =>
+        oobCode['email'] == email && oobCode['requestType'] == requestType,
+  );
+
+  if (oobCode == null) {
+    return null;
+  }
+
+  return EmulatorOobCode(
+    type: type,
+    email: oobCode['email'],
+    oobCode: oobCode['oobCode'],
+    oobLink: oobCode['oobLink'],
+  );
+}
+
 /// Create a custom authentication token with optional claims and tenant id.
 /// Useful for testing signInWithCustomToken, custom claims and tenant id data.
 // Reverse engineered from;
@@ -66,9 +169,9 @@ String emulatorCreateCustomToken(
   Map<String, Object> claims = const {},
   String tenantId = '',
 }) {
-  final iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
+  final int iat = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
 
-  final jwtHeaderEncoded = base64
+  final String jwtHeaderEncoded = base64
       .encode(
         utf8.encode(
           jsonEncode({
@@ -80,7 +183,7 @@ String emulatorCreateCustomToken(
       // Note that base64 padding ("=") must be omitted as per JWT spec.
       .replaceAll(RegExp(r'=+$'), '');
 
-  final jwtBody = {
+  Map<String, Object> jwtBody = {
     'aud':
         'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
     'iat': iat,
@@ -96,13 +199,13 @@ String emulatorCreateCustomToken(
     jwtBody['tenant_id'] = tenantId;
   }
 
-  final jwtBodyEncoded = base64
+  final String jwtBodyEncoded = base64
       .encode(utf8.encode(jsonEncode(jwtBody)))
       // Note that base64 padding ("=") must be omitted as per JWT spec.
       .replaceAll(RegExp(r'=+$'), '');
 
   // Alg is set to none so signature should be empty.
-  const jwtSignature = '';
+  const String jwtSignature = '';
   return '$jwtHeaderEncoded.$jwtBodyEncoded.$jwtSignature';
 }
 
@@ -110,14 +213,14 @@ Future<void> ensureSignedIn(String testEmail) async {
   if (FirebaseAuth.instance.currentUser == null) {
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        testEmail,
-        testPassword,
+        email: testEmail,
+        password: testPassword,
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          testEmail,
-          testPassword,
+          email: testEmail,
+          password: testPassword,
         );
       }
     } catch (e) {
@@ -133,35 +236,10 @@ Future<void> ensureSignedOut() async {
   }
 }
 
-String generateRandomEmail({
-  String prefix = '',
-  String suffix = '@foo.bar',
-}) {
-  var uuid = createCryptoRandomString();
-  var testEmail = prefix + uuid + suffix;
-  return testEmail;
-}
-
 Random _random = Random.secure();
 
 String createCryptoRandomString([int length = 32]) {
   var values = List<int>.generate(length, (i) => _random.nextInt(256));
 
   return base64Url.encode(values).toLowerCase();
-}
-
-/// Disable a specific user by uid.
-Future<void> emulatorDisableUser(String uid) async {
-  String body = jsonEncode({'disableUser': true, 'localId': uid});
-  await http.post(
-    Uri.parse(
-      'http://$testEmulatorHost:$testEmulatorPort/identitytoolkit.googleapis.com/v1/accounts:update',
-    ),
-    headers: {
-      'Authorization': 'Bearer owner',
-      'Content-Type': 'application/json',
-      'Content-Length': '${body.length}',
-    },
-    body: body,
-  );
 }

@@ -1,6 +1,6 @@
-import 'package:firebase_core_dart/firebase_core_dart.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-const optionsDart = FirebaseOptions(
+const kFirebaseOptions = FirebaseOptions(
   apiKey: 'AIzaSyAgUhHU8wSJgO5MVNy95tMT07NEjzMOfz0',
   authDomain: 'react-native-firebase-testing.firebaseapp.com',
   databaseURL: 'https://react-native-firebase-testing.firebaseio.com',

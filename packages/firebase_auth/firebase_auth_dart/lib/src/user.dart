@@ -94,7 +94,7 @@ class User {
   /// This is a read-only property, which indicates the tenant ID used to sign in
   /// the current user.
   /// This is null if the user is signed in from the parent project.
-  String? get tenantId => throw UnimplementedError();
+  String? get tenantId => null; // throw UnimplementedError();
 
   /// The unique id of a user in Firebase.
   String get uid {

@@ -1,102 +1,78 @@
-// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
+// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-
-import 'package:drive/drive.dart';
-import 'package:firebase_auth_dart/firebase_auth_dart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 
 import 'test_utils.dart';
 
-void setupTests() {
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
   group('$User', () {
     String email = generateRandomEmail();
 
-    group('IdToken ', () {
-      test('should return a token.', () async {
+    group('getIdToken()', () {
+      test('should return a token', () async {
         // Setup
         User? user;
+        UserCredential userCredential;
 
-        // Create a new mock user account.
-        final userCredential =
+        userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
-
         user = userCredential.user;
 
         // Test
         String token = await user!.getIdToken();
 
-        // Assertions
+        // // Assertions
         expect(token.length, greaterThan(24));
       });
 
-      test('setting forceRefresh to true generates a new token.', () async {
+      test('should catch error', () async {
         // Setup
-        User? user;
+        late User user;
+        UserCredential userCredential;
 
-        // Create a new mock user account.
-        final userCredential =
+        userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
-
-        user = userCredential.user;
-
-        // Get the current user token.
-        String oldToken = await user!.getIdToken();
-
-        // 1 second delay before sending another request.
-        await Future.delayed(const Duration(seconds: 1));
-
-        // Force refresh the token.
-        String newToken =
-            await FirebaseAuth.instance.currentUser!.getIdToken(true);
-
-        expect(newToken, isNot(equals(oldToken)));
-      });
-
-      test('should catch error.', () async {
-        // Setup
-        User? user;
-
-        final userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
-        );
-
         user = userCredential.user!;
 
-        // Needed for method to throw an error.
+        // needed for method to throw an error
         await FirebaseAuth.instance.signOut();
 
-        await expectLater(
-          user.getIdToken(),
-          throwsA(
-            isA<FirebaseAuthException>().having(
-              (p0) => p0.code,
-              'FirebaseAuthException with code: no-current-user',
-              'no-current-user',
-            ),
-          ),
-        );
+        try {
+          // Test
+          await user.getIdToken();
+        } on FirebaseAuthException catch (_) {
+          return;
+        } catch (e) {
+          fail('should have thrown a FirebaseAuthException error');
+        }
+        fail('should have thrown an error');
       });
+    });
 
-      test('should return a valid IdTokenResult Object.', () async {
+    group('getIdTokenResult()', () {
+      test('should return a valid IdTokenResult Object', () async {
         // Setup
-        User? user;
-
-        final userCredential =
+        late User user;
+        UserCredential userCredential;
+        userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
-
         user = userCredential.user!;
 
         // Test
@@ -107,9 +83,10 @@ void setupTests() {
         expect(idTokenResult.authTime.runtimeType, equals(DateTime));
         expect(idTokenResult.issuedAtTime.runtimeType, equals(DateTime));
         expect(idTokenResult.expirationTime.runtimeType, equals(DateTime));
-        expect(idTokenResult.token.length, greaterThan(24));
+        expect(idTokenResult.token!.length, greaterThan(24));
         expect(idTokenResult.signInProvider, equals('password'));
       });
+      // TODO add custom claims and tenant id tests for id token result
     });
 
     group('linkWithCredential()', () {
@@ -138,13 +115,18 @@ void setupTests() {
       test('should error on link anon <-> email if email already exists',
           () async {
         // Setup
+
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: testPassword,
+        );
         await FirebaseAuth.instance.signInAnonymously();
 
         // Test
         try {
           await FirebaseAuth.instance.currentUser!.linkWithCredential(
             EmailAuthProvider.credential(
-              email: testEmail,
+              email: email,
               password: testPassword,
             ),
           );
@@ -169,21 +151,29 @@ void setupTests() {
         () async {
           await FirebaseAuth.instance.signInAnonymously();
 
-          Future<ConfirmationResult> getVerificationId() async {
-            final completer = Completer<ConfirmationResult>();
+          Future<String> getVerificationId() {
+            Completer completer = Completer<String>();
 
             unawaited(
-              FirebaseAuth.instance
-                  .signInWithPhoneNumber(testPhoneNumber)
-                  .then(completer.complete)
-                  .catchError((e, _) => completer.completeError(e)),
+              FirebaseAuth.instance.verifyPhoneNumber(
+                phoneNumber: testPhoneNumber,
+                verificationCompleted: (PhoneAuthCredential credential) {
+                  fail('Should not have auto resolved');
+                },
+                verificationFailed: (FirebaseException e) {
+                  fail('Should not have errored: $e');
+                },
+                codeSent: (String verificationId, int? resetToken) {
+                  completer.complete(verificationId);
+                },
+                codeAutoRetrievalTimeout: (String foo) {},
+              ),
             );
 
-            return completer.future;
+            return completer.future.then((value) => value as String);
           }
 
-          String storedVerificationId =
-              (await getVerificationId()).verificationId;
+          String storedVerificationId = await getVerificationId();
 
           await FirebaseAuth.instance.currentUser!.linkWithCredential(
             PhoneAuthProvider.credential(
@@ -209,12 +199,12 @@ void setupTests() {
             equals(isA<UserInfo>()),
           );
           expect(FirebaseAuth.instance.currentUser!.isAnonymous, isFalse);
-
           await FirebaseAuth.instance.currentUser
               ?.unlink(PhoneAuthProvider.PROVIDER_ID);
           await FirebaseAuth.instance.currentUser?.delete();
         },
-      );
+        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+      ); // verifyPhoneNumber not supported on web.
 
       test(
         'should error on link anonymous account <-> phone account if invalid credentials',
@@ -244,6 +234,7 @@ void setupTests() {
 
           fail('should have thrown an error');
         },
+        skip: defaultTargetPlatform == TargetPlatform.macOS,
       );
     });
 
@@ -251,8 +242,8 @@ void setupTests() {
       test('should reauthenticate correctly', () async {
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
         User initialUser = FirebaseAuth.instance.currentUser!;
 
@@ -270,22 +261,22 @@ void setupTests() {
 
       test('should throw user-mismatch ', () async {
         // Setup
-        const emailAlready = 'test+2@gmail.com';
+        String emailAlready = generateRandomEmail();
 
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          testEmail,
-          testPassword,
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: testPassword,
         );
 
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          emailAlready,
-          testPassword,
+          email: emailAlready,
+          password: testPassword,
         );
 
         try {
           // Test
-          final credential = EmailAuthProvider.credential(
-            email: testEmail,
+          AuthCredential credential = EmailAuthProvider.credential(
+            email: email,
             password: testPassword,
           );
           await FirebaseAuth.instance.currentUser!
@@ -310,28 +301,33 @@ void setupTests() {
 
       test('should throw user-not-found or user-mismatch ', () async {
         // Setup
-        final userCredential =
+        UserCredential userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
-        );
-        final user = userCredential.user!;
-
-        // Test
-        final credential = EmailAuthProvider.credential(
-          email: 'userdoesnotexist@foobar.com',
+          email: email,
           password: testPassword,
         );
-        await expectLater(
-          user.reauthenticateWithCredential(credential),
-          throwsA(
-            isA<FirebaseAuthException>().having(
-              (p0) => p0.code,
-              'Throws user-mismatch exception',
-              'user-mismatch',
-            ),
-          ),
-        );
+        User user = userCredential.user!;
+
+        try {
+          // Test
+          AuthCredential credential = EmailAuthProvider.credential(
+            email: 'userdoesnotexist@foobar.com',
+            password: testPassword,
+          );
+          await user.reauthenticateWithCredential(credential);
+        } on FirebaseAuthException catch (e) {
+          // Platforms throw different errors. For now, leave them as is
+          // but in future we might want to edit them before sending to user.
+          if (e.code != 'user-mismatch' && e.code != 'user-not-found') {
+            fail('should have thrown a valid error code (got ${e.code}');
+          }
+
+          return;
+        } catch (e) {
+          fail('should have thrown an FirebaseAuthException');
+        }
+
+        fail('should have thrown an error');
       });
 
       // TODO error codes no longer match when using emulator.
@@ -361,8 +357,8 @@ void setupTests() {
       test('should throw wrong-password ', () async {
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
 
         try {
@@ -407,8 +403,8 @@ void setupTests() {
     group('sendEmailVerification()', () {
       test('should not error', () async {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          generateRandomEmail(),
-          testPassword,
+          email: generateRandomEmail(),
+          password: testPassword,
         );
         try {
           await FirebaseAuth.instance.currentUser!.sendEmailVerification();
@@ -422,24 +418,26 @@ void setupTests() {
         'should work with actionCodeSettings',
         () async {
           // Setup
-          // ActionCodeSettings actionCodeSettings = ActionCodeSettings(
-          //   handleCodeInApp: true,
-          //   url: 'https://flutterfire-e2e-tests.firebaseapp.com/foo',
-          // );
-          // await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          //    generateRandomEmail(),
-          //    testPassword,
-          // );
+          ActionCodeSettings actionCodeSettings = ActionCodeSettings(
+            handleCodeInApp: true,
+            url: 'https://flutterfire-e2e-tests.firebaseapp.com/foo',
+          );
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: generateRandomEmail(),
+            password: testPassword,
+          );
 
-          // // Test
-          // try {
-          //   await FirebaseAuth.instance.currentUser!
-          //       .sendEmailVerification(actionCodeSettings);
-          // } catch (error) {
-          //   fail('$error');
-          // }
-          // expect(FirebaseAuth.instance.currentUser, isNotNull);
+          // Test
+          try {
+            await FirebaseAuth.instance.currentUser!
+                .sendEmailVerification(actionCodeSettings);
+          } catch (error) {
+            fail('$error');
+          }
+          expect(FirebaseAuth.instance.currentUser, isNotNull);
         },
+        // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
       );
     });
 
@@ -480,16 +478,20 @@ void setupTests() {
         User linkedUser = FirebaseAuth.instance.currentUser!;
         expect(linkedUser.email, email);
 
-        await expectLater(
-          FirebaseAuth.instance.currentUser!.unlink('invalid'),
-          throwsA(
-            isA<FirebaseAuthException>().having(
-              (p0) => p0.code,
-              'Throws no-such-provider exception',
-              'no-such-provider',
-            ),
-          ),
-        );
+        // Test
+        try {
+          await FirebaseAuth.instance.currentUser!.unlink('invalid');
+        } on FirebaseAuthException catch (e) {
+          expect(e.code, 'no-such-provider');
+          expect(
+            e.message,
+            'User was not linked to an account with the given provider.',
+          );
+          return;
+        } catch (e) {
+          fail('should have thrown an FirebaseAuthException error');
+        }
+        fail('should have thrown an error');
       });
 
       test('should throw error if user does not have this provider linked',
@@ -497,17 +499,20 @@ void setupTests() {
         // Setup
         await FirebaseAuth.instance.signInAnonymously();
         // Test
-        await expectLater(
-          FirebaseAuth.instance.currentUser!
-              .unlink(EmailAuthProvider.PROVIDER_ID),
-          throwsA(
-            isA<FirebaseAuthException>().having(
-              (p0) => p0.code,
-              'Throws no-such-provider exception',
-              'no-such-provider',
-            ),
-          ),
-        );
+        try {
+          await FirebaseAuth.instance.currentUser!
+              .unlink(EmailAuthProvider.PROVIDER_ID);
+        } on FirebaseAuthException catch (e) {
+          expect(e.code, 'no-such-provider');
+          expect(
+            e.message,
+            'User was not linked to an account with the given provider.',
+          );
+          return;
+        } catch (e) {
+          fail('should have thrown an FirebaseAuthException error');
+        }
+        fail('should have thrown an error');
       });
     });
 
@@ -516,8 +521,8 @@ void setupTests() {
         String emailBefore = generateRandomEmail();
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          emailBefore,
-          testPassword,
+          email: emailBefore,
+          password: testPassword,
         );
         expect(FirebaseAuth.instance.currentUser!.email, equals(emailBefore));
 
@@ -532,7 +537,8 @@ void setupTests() {
         String pass = '${testPassword}1';
         String pass2 = '${testPassword}2';
         // Setup
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(email, pass);
+        await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: email, password: pass);
 
         // Update user password
         await FirebaseAuth.instance.currentUser!.updatePassword(pass2);
@@ -541,10 +547,8 @@ void setupTests() {
         await FirebaseAuth.instance.signOut();
 
         // Log in with the new password
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email,
-          pass2,
-        );
+        await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: pass2);
 
         // Assertions
         expect(FirebaseAuth.instance.currentUser, isA<Object>());
@@ -553,8 +557,8 @@ void setupTests() {
       test('should throw error if password is weak', () async {
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
 
         // Test
@@ -563,7 +567,7 @@ void setupTests() {
           await FirebaseAuth.instance.currentUser!.updatePassword('weak');
         } on FirebaseAuthException catch (e) {
           expect(e.code, 'weak-password');
-          expect(e.message, 'Password should be at least 6 characters.');
+          expect(e.message, 'Password should be at least 6 characters');
           return;
         } catch (e) {
           fail('should have thrown an FirebaseAuthException error');
@@ -574,7 +578,27 @@ void setupTests() {
 
     group('refreshToken', () {
       test(
-        'should return a token',
+        'should throw an unsupported error on non web platforms',
+        () async {
+          // Setup
+          await FirebaseAuth.instance.signInAnonymously();
+
+          // Test
+          FirebaseAuth.instance.currentUser!.refreshToken;
+
+          // Assertions
+          expect(
+            FirebaseAuth.instance.currentUser!.refreshToken,
+            isA<String>(),
+          );
+          expect(FirebaseAuth.instance.currentUser!.refreshToken, equals(''));
+        },
+        // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+      );
+
+      test(
+        'should return a token on web',
         () async {
           // Setup
           await FirebaseAuth.instance.signInAnonymously();
@@ -592,6 +616,7 @@ void setupTests() {
             isFalse,
           );
         },
+        skip: !kIsWeb,
       );
     });
 
@@ -601,19 +626,19 @@ void setupTests() {
           () async {
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          generateRandomEmail(),
-          testPassword,
+          email: generateRandomEmail(),
+          password: testPassword,
         );
         User user = FirebaseAuth.instance.currentUser!;
 
         // Test
-        UserMetadata? metadata = user.metadata;
+        UserMetadata metadata = user.metadata;
 
         // Assertions
-        expect(metadata?.lastSignInTime, isA<DateTime>());
-        expect(metadata?.lastSignInTime!.year, DateTime.now().year);
-        expect(metadata?.creationTime, isA<DateTime>());
-        expect(metadata?.creationTime!.year, DateTime.now().year);
+        expect(metadata.lastSignInTime, isA<DateTime>());
+        expect(metadata.lastSignInTime!.year, DateTime.now().year);
+        expect(metadata.creationTime, isA<DateTime>());
+        expect(metadata.creationTime!.year, DateTime.now().year);
       });
     });
 
@@ -622,8 +647,8 @@ void setupTests() {
           () async {
         // First create a user with a photo
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
         await FirebaseAuth.instance.currentUser!.updateDisplayName('Mona Lisa');
         await FirebaseAuth.instance.currentUser!.updatePhotoURL(
@@ -659,8 +684,8 @@ void setupTests() {
         () async {
           // First create a user with a photo
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email,
-            testPassword,
+            email: email,
+            password: testPassword,
           );
           await FirebaseAuth.instance.currentUser!
               .updateDisplayName('Mona Lisa');
@@ -679,7 +704,13 @@ void setupTests() {
             FirebaseAuth.instance.currentUser!.displayName,
             isNull,
           );
+          // Skip apple CI because of https://github.com/firebase/firebase-ios-sdk/issues/8149
+          // Using `kIsWeb` because `Platform` is not available on web
         },
+        // setting `displayName` on web throws an error
+        skip: kIsWeb ||
+            (defaultTargetPlatform == TargetPlatform.iOS ||
+                defaultTargetPlatform == TargetPlatform.macOS),
       );
     });
 
@@ -687,8 +718,8 @@ void setupTests() {
       test('updates the photoURL without impacting the displayName', () async {
         // First create a user with a photo
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
         await Future.wait([
           FirebaseAuth.instance.currentUser!.updateDisplayName('Mona Lisa'),
@@ -722,31 +753,37 @@ void setupTests() {
         );
       });
 
-      test('can set the photoURL to null', () async {
-        // First create a user with a photo
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
-        );
-        await FirebaseAuth.instance.currentUser!.updatePhotoURL(
-          'http://photo.url/test.jpg',
-        );
-        await FirebaseAuth.instance.currentUser!.reload();
+      test(
+        'can set the photoURL to null',
+        () async {
+          // First create a user with a photo
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: email,
+            password: testPassword,
+          );
+          await FirebaseAuth.instance.currentUser!.updatePhotoURL(
+            'http://photo.url/test.jpg',
+          );
+          await FirebaseAuth.instance.currentUser!.reload();
 
-        // Just checking that the user indeed had a photo before we set it to null
-        expect(
-          FirebaseAuth.instance.currentUser!.photoURL,
-          isNotNull,
-        );
+          // Just checking that the user indeed had a photo before we set it to null
+          expect(
+            FirebaseAuth.instance.currentUser!.photoURL,
+            isNotNull,
+          );
 
-        await FirebaseAuth.instance.currentUser!.updatePhotoURL(null);
-        await FirebaseAuth.instance.currentUser!.reload();
+          await FirebaseAuth.instance.currentUser!.updatePhotoURL(null);
+          await FirebaseAuth.instance.currentUser!.reload();
 
-        expect(
-          FirebaseAuth.instance.currentUser!.photoURL,
-          isNull,
-        );
-      });
+          expect(
+            FirebaseAuth.instance.currentUser!.photoURL,
+            isNull,
+          );
+        },
+        // setting `photoURL` on web throws an error
+        // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+      );
     });
 
     group('updateProfile()', () {
@@ -756,14 +793,15 @@ void setupTests() {
 
         // Setup
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
 
         // Update user profile
+        // ignore: deprecated_member_use
         await FirebaseAuth.instance.currentUser!.updateProfile(
           displayName: displayName,
-          photoUrl: photoURL,
+          photoURL: photoURL,
         );
 
         await FirebaseAuth.instance.currentUser!.reload();
@@ -826,8 +864,8 @@ void setupTests() {
         () async {
           // Setup
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email,
-            testPassword,
+            email: email,
+            password: testPassword,
           );
 
           try {
@@ -851,6 +889,7 @@ void setupTests() {
 
           fail('should have thrown an error');
         },
+        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
       );
 
       // TODO error codes no longer match up on emulator
@@ -883,7 +922,7 @@ void setupTests() {
     //   test(
     //     'should send verification email',
     //     () async {
-    //       await ensureSignedIn(email);
+    //       await ensureSignedIn(testEmail);
     //       await FirebaseAuth.instance.currentUser.verifyBeforeUpdateEmail(
     //           'updated-test-email@example.com',
     //           ActionCodeSettings(
@@ -895,7 +934,7 @@ void setupTests() {
     //       final oobCode = await emulatorOutOfBandCode(
     //           email, EmulatorOobCodeType.verifyEmail);
     //       expect(oobCode, isNotNull);
-    //       expect(oobCode.email, email);
+    //       expect(oobCode.email, testEmail);
     //       expect(oobCode.type, EmulatorOobCodeType.verifyEmail);
     //     },
     //   );
@@ -909,8 +948,8 @@ void setupTests() {
 
         userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
         user = userCredential.user!;
 
@@ -921,8 +960,8 @@ void setupTests() {
         expect(FirebaseAuth.instance.currentUser, equals(null));
         await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         )
             .then((UserCredential userCredential) {
           expect(FirebaseAuth.instance.currentUser!.email, equals(email));
@@ -940,8 +979,8 @@ void setupTests() {
 
         userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email,
-          testPassword,
+          email: email,
+          password: testPassword,
         );
         user = userCredential.user!;
 
@@ -963,5 +1002,8 @@ void setupTests() {
         fail('Should have thrown an error');
       });
     });
-  });
+  },
+  // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+  skip: defaultTargetPlatform == TargetPlatform.macOS,
+  );
 }

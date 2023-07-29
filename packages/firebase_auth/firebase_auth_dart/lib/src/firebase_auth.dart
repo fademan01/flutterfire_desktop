@@ -16,11 +16,11 @@ class FirebaseAuth {
       ),
     );
 
-    _idTokenChangedController = StreamController<User?>.broadcast(sync: true);
-    _changeController = StreamController<User?>.broadcast(sync: true);
+    _idTokenChangedController = StreamController<User?>.broadcast();
+    _changeController = StreamController<User?>.broadcast();
 
     if (_localUser() != null) {
-      _currentUser = User(_localUser()!, this);
+       _currentUser = User(_localUser()!, this);
     }
   }
 
@@ -600,6 +600,8 @@ class FirebaseAuth {
   /// If successful, it also updates
   /// any [authStateChanges], or [idTokenChanges] stream listeners.
   Future<void> signOut() async {
+    await null;
+
     try {
       _updateCurrentUserAndEvents(null, true);
     } catch (exception) {

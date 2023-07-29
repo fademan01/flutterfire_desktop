@@ -50,10 +50,10 @@ class IdTokenResult {
   /// Map representation of [IdTokenResult]
   Map<String, dynamic> get toMap {
     return {
-      'authTimestamp': authTime,
+      'authTimestamp': authTime?.millisecondsSinceEpoch,
       'claims': claims,
-      'expirationTimestamp': expirationTime,
-      'issuedAtTime': issuedAtTime,
+      'expirationTimestamp': expirationTime?.millisecondsSinceEpoch,
+      'issuedAtTimestamp': issuedAtTime?.millisecondsSinceEpoch,
       'signInProvider': signInProvider,
       'token': token,
     };
