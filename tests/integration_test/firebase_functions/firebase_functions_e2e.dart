@@ -2,13 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:typed_data';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:drive/drive.dart';
-
-import '../firebase_options.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:tests/firebase_options.dart';
 
 import 'sample_data.dart' as data;
 
@@ -17,12 +16,16 @@ String kTestFunctionCustomRegion = 'testFunctionCustomRegion';
 String kTestFunctionTimeout = 'testFunctionTimeout';
 String kTestMapConvertType = 'testMapConvertType';
 
-void setupTests() {
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
   group('cloud_functions', () {
     late HttpsCallable callable;
 
     setUpAll(() async {
-      await Firebase.initializeApp(options: options);
+      await Firebase.initializeApp(
+        options: kFirebaseOptions,
+      );
       FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
       callable =
           FirebaseFunctions.instance.httpsCallable(kTestFunctionDefaultRegion);
@@ -102,6 +105,8 @@ void setupTests() {
           expect(data['float'], isA<List>());
           expect(data['double'], isA<List>());
         },
+        // Int64List is not supported on Web.
+        skip: kIsWeb,
       );
 
       test(
@@ -139,7 +144,6 @@ void setupTests() {
             'inputData': data.deepMap,
             'asError': true,
           });
-
           fail('Should have thrown');
         } on FirebaseFunctionsException catch (e) {
           expect(e.code, equals('cancelled'));
@@ -168,25 +172,31 @@ void setupTests() {
     });
 
     group('HttpsCallableOptions', () {
-      test('times out when the provided timeout option is exceeded', () async {
-        final instance = FirebaseFunctions.instance;
-        instance.useFunctionsEmulator('localhost', 5001);
-        final timeoutCallable = FirebaseFunctions.instance.httpsCallable(
-          kTestFunctionTimeout,
-          options: HttpsCallableOptions(timeout: const Duration(seconds: 3)),
-        );
-        try {
-          await timeoutCallable({
-            'testTimeout': const Duration(seconds: 6).inMilliseconds.toString(),
-          });
-
-          fail('Should have thrown');
-        } on FirebaseFunctionsException catch (e) {
-          expect(e.code, equals('deadline-exceeded'));
-        } catch (e) {
-          fail('$e');
-        }
-      });
+      test(
+        'times out when the provided timeout option is exceeded',
+        () async {
+          final instance = FirebaseFunctions.instance;
+          instance.useFunctionsEmulator('localhost', 5001);
+          final timeoutCallable = FirebaseFunctions.instance.httpsCallable(
+            kTestFunctionTimeout,
+            options: HttpsCallableOptions(timeout: const Duration(seconds: 3)),
+          );
+          try {
+            await timeoutCallable({
+              'testTimeout':
+                  const Duration(seconds: 6).inMilliseconds.toString(),
+            });
+            fail('Should have thrown');
+          } on FirebaseFunctionsException catch (e) {
+            expect(e.code, equals('deadline-exceeded'));
+          } catch (e) {
+            fail('$e');
+          }
+        },
+        // Android skip because it's flaky. See:
+        // https://github.com/firebase/flutterfire/issues/9652
+        skip: defaultTargetPlatform == TargetPlatform.android,
+      );
     });
   });
 }

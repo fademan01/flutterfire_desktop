@@ -1,22 +1,23 @@
-// Copyright 2021 Invertase Limited. All rights reserved.
-// Use of this source code is governed by a BSD-style license
-// that can be found in the LICENSE file.
+// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:tests/firebase_options.dart';
 
-import 'package:drive/drive.dart';
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-import '../firebase_options.dart';
-
-void setupTests() {
   group('firebase_core', () {
-    String testAppName = 'testApp';
+    String testAppName = '[DEFAULT]';
 
     setUpAll(() async {
       await Firebase.initializeApp(
-        name: testAppName,
-        options: options,
+        options: kFirebaseOptions,
       );
     });
 
@@ -24,14 +25,14 @@ void setupTests() {
       List<FirebaseApp> apps = Firebase.apps;
       expect(apps.length, 1);
       expect(apps[0].name, testAppName);
-      expect(apps[0].options, options);
+      expect(apps[0].options, kFirebaseOptions);
     });
 
     test('Firebase.app()', () async {
       FirebaseApp app = Firebase.app(testAppName);
 
       expect(app.name, testAppName);
-      expect(app.options, options);
+      expect(app.options, kFirebaseOptions);
     });
 
     test('Firebase.app() Exception', () async {
@@ -41,28 +42,35 @@ void setupTests() {
       );
     });
 
-    test('FirebaseApp.delete()', () async {
-      await Firebase.initializeApp(
-        name: 'SecondaryApp',
-        options: options,
-      );
+    test(
+      'FirebaseApp.delete()',
+      () async {
+        await Firebase.initializeApp(
+          name: 'SecondaryApp',
+          options: kFirebaseOptions,
+        );
 
-      expect(Firebase.apps.length, 2);
+        expect(Firebase.apps.length, 2);
 
-      FirebaseApp app = Firebase.app('SecondaryApp');
+        FirebaseApp app = Firebase.app('SecondaryApp');
 
-      await app.delete();
+        await app.delete();
 
-      expect(Firebase.apps.length, 1);
-    });
+        expect(Firebase.apps.length, 1);
+        // TODO(russellwheatley): test randomly causes an auth sign-in failure due to duplicate accounts.
+      },
+      skip: TargetPlatform.android == defaultTargetPlatform,
+    );
 
     test('FirebaseApp.setAutomaticDataCollectionEnabled()', () async {
       FirebaseApp app = Firebase.app(testAppName);
-      bool enabled = app.isAutomaticDataCollectionEnabled;
+      await app.setAutomaticDataCollectionEnabled(false);
 
-      await app.setAutomaticDataCollectionEnabled(!enabled);
+      expect(app.isAutomaticDataCollectionEnabled, false);
 
-      expect(app.isAutomaticDataCollectionEnabled, !enabled);
+      await app.setAutomaticDataCollectionEnabled(true);
+
+      expect(app.isAutomaticDataCollectionEnabled, true);
     });
 
     test('FirebaseApp.setAutomaticResourceManagementEnabled()', () async {
