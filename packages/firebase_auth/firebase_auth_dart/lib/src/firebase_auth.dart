@@ -20,7 +20,7 @@ class FirebaseAuth {
     _changeController = StreamController<User?>.broadcast();
 
     if (_localUser() != null) {
-       _currentUser = User(_localUser()!, this);
+      _currentUser = User(_localUser()!, this);
     }
   }
 
