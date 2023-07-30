@@ -600,6 +600,8 @@ class FirebaseAuth {
   /// If successful, it also updates
   /// any [authStateChanges], or [idTokenChanges] stream listeners.
   Future<void> signOut() async {
+    // Await something, otherwise this method can be synchonously resolved
+    // and make the authStateChanges behave differently then the official SDK.
     await null;
 
     try {
