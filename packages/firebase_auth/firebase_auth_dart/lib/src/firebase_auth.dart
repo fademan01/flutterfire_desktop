@@ -494,8 +494,12 @@ class FirebaseAuth {
       final userData =
           await _api.userAccount.getAccountInfo(response['idToken']);
 
+      // Override the response fields with updated fields from `getAccountInfo`.
+      // For instance userData can have emailVerified true and response false.
+      response.addAll(userData);
+      
       // Map the json response to an actual user.
-      final user = User(userData..addAll(response), this);
+      final user = User(response, this);
 
       _updateCurrentUserAndEvents(user, true);
 
