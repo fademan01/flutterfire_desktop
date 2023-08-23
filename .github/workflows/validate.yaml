@@ -93,9 +93,8 @@ jobs:
         run: cd .\.github\workflows\scripts && .\start-firebase-emulator.bat
       - name: 'Run Tests'
         working-directory: tests
-        run: flutter test -d windows --no-pub \
-              .\integration_test\e2e_test.dart \
-              --dart-define=CI=true
+        run: |
+          flutter test .\integration_test\e2e_test.dart -d windows
 
   # test_macos:
   #   runs-on: macos-latest
