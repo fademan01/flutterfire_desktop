@@ -27,15 +27,13 @@ scripts:
         - 'test/'
   
   test:e2e:
-    run: |
-      melos exec -c 1 --fail-fast -- \
-        "flutter drive --driver=test_driver/integration_test.dart --target=integration_test/e2e_test.dart -d linux --dart-define=CI=true"
+    run: cd tests && flutter test integration_test/e2e_test.dart --dart-define=CI=true
     description: |
       Run all e2e tests.
     packageFilters:
       dirExists:
         - test_driver
-      scope: '*tests*'
+      scope: 'tests'
 
   firebase:emulator:
     run: |

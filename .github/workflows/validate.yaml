@@ -65,8 +65,8 @@ jobs:
       - name: 'Run Tests'
         working-directory: tests
         run: |
-          xvfb-run -a flutter drive -d linux --no-pub \
-          --target=./integration_test/e2e_test.dart --driver=./test_driver/integration_test.dart \
+          xvfb-run -a flutter test -d linux --no-pub \
+          ./integration_test/e2e_test.dart \
           --dart-define=CI=true
           
   test_windows:
@@ -90,8 +90,8 @@ jobs:
         run: cd .\.github\workflows\scripts && .\start-firebase-emulator.bat
       - name: 'Run Tests'
         working-directory: tests
-        run: cmd /c flutter drive -d windows --no-pub \
-              --target=.\integration_test\e2e_test.dart --driver=.\test_driver\integration_test.dart \
+        run: cmd /c flutter test -d windows --no-pub \
+              .\integration_test\e2e_test.dart \
               --dart-define=CI=true
 
   # test_macos:
@@ -145,6 +145,6 @@ jobs:
   #       run: cd ./.github/workflows/scripts && ./start-firebase-emulator.sh
   #     - name: 'Run Tests'
   #       working-directory: tests
-  #       run: flutter drive -d macos --no-pub \
-  #            --target=./integration_test/e2e_test.dart --driver=./test_driver/integration_test.dart \
+  #       run: flutter test -d macos --no-pub \
+  #            ./integration_test/e2e_test.dart \
   #            --dart-define=CI=true
