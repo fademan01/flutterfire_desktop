@@ -497,7 +497,7 @@ class FirebaseAuth {
       // Override the response fields with updated fields from `getAccountInfo`.
       // For instance userData can have emailVerified true and response false.
       response.addAll(userData);
-      
+
       // Map the json response to an actual user.
       final user = User(response, this);
 

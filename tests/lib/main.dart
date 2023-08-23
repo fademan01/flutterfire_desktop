@@ -39,7 +39,8 @@ class MyHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Currently there are no tests to run manually, but they could be added here'),
+            Text(
+                'Currently there are no tests to run manually, but they could be added here'),
             // For instance:
             // ElevatedButton(
             //   onPressed: () async {
