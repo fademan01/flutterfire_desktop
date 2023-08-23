@@ -9,6 +9,13 @@ import 'package:firebase_core_platform_interface/firebase_core_platform_interfac
 
 part 'firebase_app_desktop.dart';
 
+/// Forces the registration of [FirebaseCore] as a Firebase platform implementation.
+/// It should be called before initializing the Firebase app and it can be useful
+/// to use this implementation instead of the one from the official Firebase plugin.
+void forceRegisterFirebaseCoreDesktopPlugin() {
+  FirebaseCore.registerWith();
+}
+
 /// Desktop implementation of FirebaseCore for managing Firebase app
 /// instances.
 class FirebaseCore extends FirebasePlatform {

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:firebase_core_desktop/firebase_core_desktop.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -8,6 +11,11 @@ import 'firebase_functions/firebase_functions_e2e_test.dart'
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isWindows) {
+    // Use firebase_core_desktop plugin on Windows instead of the official
+    forceRegisterFirebaseCoreDesktopPlugin();
+  }
 
   group('FlutterFire', () {
     firebase_core.main();

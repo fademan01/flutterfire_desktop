@@ -1,9 +1,17 @@
+import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_desktop/firebase_core_desktop.dart';
 import 'package:flutter/material.dart';
 import 'package:tests/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isWindows) {
+    // Use firebase_core_desktop plugin on Windows instead of the official
+    forceRegisterFirebaseCoreDesktopPlugin();
+  }
 
   await Firebase.initializeApp(options: kFirebaseOptions);
   runApp(const MyApp());
