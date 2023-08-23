@@ -33,9 +33,10 @@ flutter:
       linux:
         dartPluginClass: FirebaseCore
         pluginClass: none
-      windows:
-        dartPluginClass: FirebaseCore
-        pluginClass: none
+      # TODO when doing development on Windows, uncomment this.
+      # windows:
+      #   dartPluginClass: FirebaseCore
+      #   pluginClass: none
 
 false_secrets:
   - /example/lib/main.dart
