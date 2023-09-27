@@ -16,7 +16,11 @@ import 'utils/desktop_utils.dart';
 class User extends UserPlatform {
   // ignore: public_member_api_docs
   User(FirebaseAuthPlatform auth, this._user)
-      : super(auth, MultiFactorDesktop(auth), _user.toMap());
+      : super(
+          auth,
+          MultiFactorDesktop(auth),
+          dartUserToPigeon(_user),
+        );
 
   final auth_dart.User _user;
 
@@ -36,7 +40,7 @@ class User extends UserPlatform {
   String? get email => _user.email;
 
   @override
-  bool get emailVerified => _user.emailVerified;
+  bool get isEmailVerified => _user.emailVerified;
 
   @override
   Future<String> getIdToken(bool forceRefresh) async {
@@ -52,7 +56,7 @@ class User extends UserPlatform {
     try {
       final idTokenResult = await _user.getIdTokenResult(forceRefresh);
 
-      return IdTokenResult(idTokenResult.toMap);
+      return IdTokenResult(dartIdTokenResultToPigeon(idTokenResult));
     } catch (e) {
       throw getFirebaseAuthException(e);
     }
@@ -106,7 +110,12 @@ class User extends UserPlatform {
 
   @override
   List<UserInfo> get providerData {
-    return _user.providerData.map((user) => UserInfo(user.toMap())).toList();
+    return _user.providerData
+        .map(
+          (auth_dart.UserInfo userInfo) =>
+              dartUserInfoToUserInfo(_user, userInfo),
+        )
+        .toList();
   }
 
   @override
@@ -223,4 +232,72 @@ class User extends UserPlatform {
     // TODO: implement verifyBeforeUpdateEmail
     throw UnimplementedError();
   }
+}
+
+PigeonUserDetails dartUserToPigeon(auth_dart.User user) {
+  return PigeonUserDetails(
+    userInfo: _dartUserToPigeonUserInfo(user),
+    providerData: user.providerData.map((info) => info.toMap()).toList(),
+  );
+}
+
+PigeonUserInfo _dartUserToPigeonUserInfo(auth_dart.User user) {
+  final userDetails = user.toMap();
+  final metadata = user.metadata;
+  return PigeonUserInfo(
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoUrl: user.photoURL,
+    phoneNumber: user.phoneNumber,
+    isAnonymous: user.isAnonymous,
+    isEmailVerified: user.emailVerified,
+    providerId: userDetails['providerId'],
+    tenantId: user.tenantId,
+    refreshToken: user.refreshToken,
+    creationTimestamp: metadata?.creationTime?.millisecondsSinceEpoch,
+  );
+}
+
+UserInfo dartUserInfoToUserInfo(
+    auth_dart.User user, auth_dart.UserInfo userInfo) {
+  final info = _dartUserToPigeonUserInfo(user);
+  info.email = userInfo.email;
+  info.displayName = userInfo.displayName;
+  info.photoUrl = userInfo.photoURL;
+  info.phoneNumber = userInfo.phoneNumber;
+  
+  print(userInfo.toMap());
+  //info.isEmailVerified = userInfo.;
+
+  return UserInfo.fromPigeon(info);
+  /*  uid: data['uid'] as String,
+          email: data['email'] as String?,
+          displayName: data['displayName'] as String?,
+          photoUrl: data['photoUrl'] as String?,
+          phoneNumber: data['phoneNumber'] as String?,
+          isAnonymous: data['isAnonymous'] as bool,
+          isEmailVerified: data['isEmailVerified'] as bool,
+          providerId: data['providerId'] as String?,
+          tenantId: data['tenantId'] as String?,
+          refreshToken: data['refreshToken'] as String?,
+          creationTimestamp: data['creationTimestamp'] as int?,
+          lastSignInTimestamp: data['lastSignInTimestamp'] as int?,
+  ); */
+}
+
+PigeonIdTokenResult dartIdTokenResultToPigeon(
+  auth_dart.IdTokenResult idTokenResult,
+) {
+  return PigeonIdTokenResult(
+    token: idTokenResult.token,
+    expirationTimestamp: idTokenResult.expirationTime?.millisecondsSinceEpoch,
+    authTimestamp: idTokenResult.authTime?.millisecondsSinceEpoch,
+    issuedAtTimestamp: idTokenResult.issuedAtTime?.millisecondsSinceEpoch,
+    signInProvider: idTokenResult.signInProvider,
+    claims: idTokenResult.claims,
+    // TODO: signInSecondFactor
+    // ignore: avoid_redundant_argument_values
+    signInSecondFactor: null,
+  );
 }
