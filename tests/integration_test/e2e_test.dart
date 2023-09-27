@@ -6,8 +6,7 @@ import 'package:integration_test/integration_test.dart';
 
 import 'firebase_auth/firebase_auth_e2e_test.dart' as firebase_auth;
 import 'firebase_core/firebase_core_e2e_test.dart' as firebase_core;
-import 'firebase_functions/firebase_functions_e2e_test.dart'
-    as firebase_functions;
+import 'cloud_functions/cloud_functions_e2e_test.dart' as cloud_functions;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +19,6 @@ void main() {
   group('FlutterFire', () {
     firebase_core.main();
     firebase_auth.main();
-    firebase_functions.main();
+    cloud_functions.main();
   });
 }

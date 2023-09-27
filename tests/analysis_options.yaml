@@ -1,1 +1,5 @@
+analyzer:
+  exclude: 
+    - flutterfire_repo/**/
+  
 linter:

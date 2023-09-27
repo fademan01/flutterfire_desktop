@@ -1,0 +1,35 @@
+diff -x flutterfire_repo -dur flutterfire/cloud_functions_e2e_test.dart dart/cloud_functions_e2e_test.dart
+--- flutterfire/cloud_functions_e2e_test.dart	2023-09-27 17:16:12.838565187 +0200
++++ dart/cloud_functions_e2e_test.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2021, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ import 'package:cloud_functions/cloud_functions.dart';
+ import 'package:firebase_core/firebase_core.dart';
+@@ -24,7 +24,7 @@
+ 
+     setUpAll(() async {
+       await Firebase.initializeApp(
+-        options: DefaultFirebaseOptions.currentPlatform,
++        options: kFirebaseOptions,
+       );
+       FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
+       callable =
+diff -x flutterfire_repo -dur flutterfire/sample_data.dart dart/sample_data.dart
+--- flutterfire/sample_data.dart	2023-09-27 16:49:04.286749220 +0200
++++ dart/sample_data.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2021, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ Map<String, dynamic> map = <String, dynamic>{
+   'number': 123,
