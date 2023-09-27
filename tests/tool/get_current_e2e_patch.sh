@@ -10,11 +10,6 @@ fi
 
 FIREBASE_PACKAGE_NAME="$1"
 
-if [[ "$FIREBASE_PACKAGE_NAME" != "firebase_auth" && "$FIREBASE_PACKAGE_NAME" != "firebase_core" ]]; then
-    echo "Invalid firebase package name."
-    exit 1
-fi 
-
 ROOT_DIR=$(realpath .)
 FLUTTERFIRE_REPO_E2E_PATH="$ROOT_DIR"/flutterfire_repo/tests
 DART_REPO_E2E_PATH="$ROOT_DIR"

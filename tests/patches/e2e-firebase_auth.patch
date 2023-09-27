@@ -1,0 +1,218 @@
+diff -x flutterfire_repo -dur flutterfire/firebase_auth_e2e_test.dart dart/firebase_auth_e2e_test.dart
+--- flutterfire/firebase_auth_e2e_test.dart	2023-09-27 16:49:05.229752693 +0200
++++ dart/firebase_auth_e2e_test.dart	2023-08-23 16:52:57.674305920 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ import 'package:firebase_auth/firebase_auth.dart';
+ import 'package:firebase_core/firebase_core.dart';
+@@ -9,7 +9,7 @@
+ import 'package:tests/firebase_options.dart';
+ 
+ import 'firebase_auth_instance_e2e_test.dart' as instance_tests;
+-import 'firebase_auth_multi_factor_e2e_test.dart' as multi_factor_tests;
++// import 'firebase_auth_multi_factor_e2e_test.dart' as multi_factor_tests;
+ import 'firebase_auth_user_e2e_test.dart' as user_tests;
+ import 'test_utils.dart';
+ 
+@@ -19,7 +19,7 @@
+   group('firebase_auth', () {
+     setUpAll(() async {
+       await Firebase.initializeApp(
+-        options: DefaultFirebaseOptions.currentPlatform,
++        options: kFirebaseOptions,
+       );
+       await FirebaseAuth.instance
+           .useAuthEmulator(testEmulatorHost, testEmulatorPort);
+@@ -57,6 +57,6 @@
+ 
+     instance_tests.main();
+     user_tests.main();
+-    multi_factor_tests.main();
++    // multi_factor_tests.main();
+   });
+ }
+diff -x flutterfire_repo -dur flutterfire/firebase_auth_instance_e2e_test.dart dart/firebase_auth_instance_e2e_test.dart
+--- flutterfire/firebase_auth_instance_e2e_test.dart	2023-09-27 16:49:05.229752693 +0200
++++ dart/firebase_auth_instance_e2e_test.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,7 +1,6 @@
+-// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
+-
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ import 'dart:async';
+ 
+ import 'package:firebase_auth/firebase_auth.dart';
+@@ -137,7 +136,7 @@
+           // Requires a fresh app.
+           FirebaseApp second = await Firebase.initializeApp(
+             name: 'test-init',
+-            options: DefaultFirebaseOptions.currentPlatform,
++            options: kFirebaseOptions,
+           );
+ 
+           Stream<User?> stream =
+@@ -210,7 +209,7 @@
+             fail(e.toString());
+           }
+         });
+-      });
++      }, skip: true);
+ 
+       group('checkActionCode()', () {
+         test('throws on invalid code', () async {
+@@ -223,7 +222,7 @@
+             fail(e.toString());
+           }
+         });
+-      });
++      }, skip: true);
+ 
+       group('confirmPasswordReset()', () {
+         test('throws on invalid code', () async {
+@@ -371,7 +370,7 @@
+             equals(true),
+           );
+         });
+-      });
++      }, skip: true);
+ 
+       group('sendPasswordResetEmail()', () {
+         test('should not error', () async {
+@@ -440,7 +439,7 @@
+             Uri.encodeFull(continueUrl),
+           );
+         });
+-      });
++      }, skip: true);
+ 
+       group('languageCode', () {
+         test('should change the language code', () async {
+@@ -459,7 +458,9 @@
+               isNotNull,
+             ); // default to the device language or the Firebase projects default language
+           },
+-          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
++          // TODO: Implement fallback locale when setting it as null
++          skip: true,
++          //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+         );
+ 
+         test(
+@@ -818,7 +819,7 @@
+             skip: kIsWeb || defaultTargetPlatform != TargetPlatform.android,
+           );
+         },
+-        skip: defaultTargetPlatform == TargetPlatform.macOS || kIsWeb,
++        skip: true,
+       );
+ 
+       group('setSettings()', () {
+Only in flutterfire: firebase_auth_multi_factor_e2e_test.dart
+diff -x flutterfire_repo -dur flutterfire/firebase_auth_user_e2e_test.dart dart/firebase_auth_user_e2e_test.dart
+--- flutterfire/firebase_auth_user_e2e_test.dart	2023-09-27 16:49:05.229752693 +0200
++++ dart/firebase_auth_user_e2e_test.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ import 'dart:async';
+ import 'package:firebase_auth/firebase_auth.dart';
+@@ -68,7 +68,6 @@
+         // Setup
+         late User user;
+         UserCredential userCredential;
+-
+         userCredential =
+             await FirebaseAuth.instance.createUserWithEmailAndPassword(
+           email: email,
+@@ -204,7 +203,9 @@
+               ?.unlink(PhoneAuthProvider.PROVIDER_ID);
+           await FirebaseAuth.instance.currentUser?.delete();
+         },
+-        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
++        // TODO: verifyPhoneNumber()
++        skip: true,
++        //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+       ); // verifyPhoneNumber not supported on web.
+ 
+       test(
+@@ -595,7 +596,10 @@
+           expect(FirebaseAuth.instance.currentUser!.refreshToken, equals(''));
+         },
+         // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+-        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
++        skip: kIsWeb ||
++            defaultTargetPlatform == TargetPlatform.macOS ||
++            defaultTargetPlatform == TargetPlatform.windows ||
++            defaultTargetPlatform == TargetPlatform.linux,
+       );
+ 
+       test(
+@@ -617,7 +621,9 @@
+             isFalse,
+           );
+         },
+-        skip: !kIsWeb,
++        skip: !kIsWeb &&
++            (defaultTargetPlatform != TargetPlatform.linux &&
++                defaultTargetPlatform != TargetPlatform.windows),
+       );
+     });
+ 
+@@ -1004,7 +1010,6 @@
+       });
+     });
+   },
+-  // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+-  skip: defaultTargetPlatform == TargetPlatform.macOS,
+-  );
++      // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
++      skip: defaultTargetPlatform == TargetPlatform.macOS);
+ }
+diff -x flutterfire_repo -dur flutterfire/test_utils.dart dart/test_utils.dart
+--- flutterfire/test_utils.dart	2023-09-27 16:49:05.230752696 +0200
++++ dart/test_utils.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ import 'dart:convert';
+ import 'dart:math';
+@@ -14,17 +14,10 @@
+ const String testEmail = 'test@example.com';
+ const String testPassword = 'testpassword';
+ const String testPhoneNumber = '+447111555666';
+-const String _testFirebaseProjectId = 'flutterfire-e2e-tests';
+ 
+-// TODO can this be moved to be shared for all plugins that use emulators?
+-String get testEmulatorHost {
+-  if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
+-    return '10.0.2.2';
+-  }
+-  return 'localhost';
+-}
+-
+-const int testEmulatorPort = 9099;
++const _testFirebaseProjectId = 'react-native-firebase-testing';
++const testEmulatorHost = 'localhost';
++const testEmulatorPort = 9099;
+ 
+ class EmulatorOobCode {
+   @protected

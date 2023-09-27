@@ -4,14 +4,14 @@ set -e
 
 if [ -z "$1" ]
   then
-    echo "No argument supplied. Pass the firebase package name to extract the commit from."
+    # No argument supplied. Pass the firebase package name to extract the commit from.
     exit 1
 fi
 
 FIREBASE_PACKAGE_NAME="$1"
 
 if [[ "$FIREBASE_PACKAGE_NAME" != "firebase_auth" && "$FIREBASE_PACKAGE_NAME" != "firebase_core" ]]; then
-    echo "Invalid firebase package name."
+    # Invalid firebase package name.
     exit 1
 fi 
 

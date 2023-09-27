@@ -9,13 +9,17 @@ fi
 
 FIREBASE_PACKAGE_NAME="$1"
 
-if [[ "$FIREBASE_PACKAGE_NAME" != "firebase_auth" && "$FIREBASE_PACKAGE_NAME" != "firebase_core" ]]; then
-    echo "Invalid firebase package name."
+ROOT_DIR=$(realpath .)
+
+set +e
+FLUTTERFIRE_COMMIT=$("$ROOT_DIR"/tool/extract_firebase_package_commit.sh $FIREBASE_PACKAGE_NAME)
+set -e
+
+if [ -z "$FLUTTERFIRE_COMMIT" ]; then
+    echo "Failed to extract commit from firebase package."
     exit 1
 fi
 
-ROOT_DIR=$(realpath .)
-FLUTTERFIRE_COMMIT=$("$ROOT_DIR"/tool/extract_firebase_package_commit.sh $FIREBASE_PACKAGE_NAME)
 FLUTTERFIRE_REPO="$ROOT_DIR/flutterfire_repo"
 
 git clone https://github.com/firebase/flutterfire ${FLUTTERFIRE_REPO} || true
