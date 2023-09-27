@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart' show IterableExtension;
@@ -217,6 +218,7 @@ Future<void> ensureSignedIn(String testEmail) async {
         password: testPassword,
       );
     } on FirebaseAuthException catch (e) {
+      // The Windows error codes are not consistent
       if (e.code == 'email-already-in-use') {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: testEmail,
@@ -243,3 +245,6 @@ String createCryptoRandomString([int length = 32]) {
 
   return base64Url.encode(values).toLowerCase();
 }
+
+
+bool get isFlutterFirePlatform => Platform.isLinux || Platform.isWindows;

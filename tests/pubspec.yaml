@@ -29,7 +29,7 @@ environment:
 dependencies:
   cloud_functions: 4.0.13
   firebase_auth: 4.6.3
-  firebase_core: ^2.15.0
+  firebase_core: ^2.16.0
   firebase_auth_desktop:
     path: ../packages/firebase_auth/firebase_auth_desktop
   firebase_auth_dart:

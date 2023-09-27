@@ -1,6 +1,6 @@
 diff -x flutterfire_repo -dur flutterfire/firebase_auth_e2e_test.dart dart/firebase_auth_e2e_test.dart
---- flutterfire/firebase_auth_e2e_test.dart	2023-09-27 17:16:12.839565191 +0200
-+++ dart/firebase_auth_e2e_test.dart	2023-09-27 17:38:42.007451416 +0200
+--- flutterfire/firebase_auth_e2e_test.dart	2023-09-27 17:51:37.984265794 +0200
++++ dart/firebase_auth_e2e_test.dart	2023-09-27 18:37:07.287067385 +0200
 @@ -1,6 +1,6 @@
 -// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
 -// for details. All rights reserved. Use of this source code is governed by a
@@ -18,12 +18,12 @@ diff -x flutterfire_repo -dur flutterfire/firebase_auth_e2e_test.dart dart/fireb
 -        options: DefaultFirebaseOptions.currentPlatform,
 +        options: kFirebaseOptions,
        );
+ 
        await FirebaseAuth.instance
-           .useAuthEmulator(testEmulatorHost, testEmulatorPort);
 diff -x flutterfire_repo -dur flutterfire/firebase_auth_instance_e2e_test.dart dart/firebase_auth_instance_e2e_test.dart
---- flutterfire/firebase_auth_instance_e2e_test.dart	2023-09-27 17:32:28.994094877 +0200
-+++ dart/firebase_auth_instance_e2e_test.dart	2023-09-27 17:32:29.017094960 +0200
-@@ -1,7 +1,6 @@
+--- flutterfire/firebase_auth_instance_e2e_test.dart	2023-09-27 17:51:37.984265794 +0200
++++ dart/firebase_auth_instance_e2e_test.dart	2023-09-27 18:43:51.356489527 +0200
+@@ -1,9 +1,7 @@
 -// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 -// for details. All rights reserved. Use of this source code is governed by a
 -// BSD-style license that can be found in the LICENSE file.
@@ -32,9 +32,11 @@ diff -x flutterfire_repo -dur flutterfire/firebase_auth_instance_e2e_test.dart d
 +// Use of this source code is governed by a BSD-style license
 +// that can be found in the LICENSE file.
  import 'dart:async';
+-import 'dart:io';
  
  import 'package:firebase_auth/firebase_auth.dart';
-@@ -137,7 +136,7 @@
+ import 'package:firebase_core/firebase_core.dart';
+@@ -138,7 +136,7 @@
            // Requires a fresh app.
            FirebaseApp second = await Firebase.initializeApp(
              name: 'test-init',
@@ -43,65 +45,159 @@ diff -x flutterfire_repo -dur flutterfire/firebase_auth_instance_e2e_test.dart d
            );
  
            Stream<User?> stream =
-@@ -210,7 +209,7 @@
+@@ -190,7 +188,7 @@
+             equals('updatedName'),
+           );
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('currentUser', () {
+         test('should return currentUser', () async {
+@@ -211,7 +209,7 @@
              fail(e.toString());
            }
          });
--      });
-+      }, skip: true);
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      }, skip: !kIsWeb && isFlutterFirePlatform,);
  
        group('checkActionCode()', () {
          test('throws on invalid code', () async {
-@@ -223,7 +222,7 @@
+@@ -224,7 +222,7 @@
              fail(e.toString());
            }
          });
--      });
-+      }, skip: true);
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      }, skip: !kIsWeb && isFlutterFirePlatform);
  
        group('confirmPasswordReset()', () {
          test('throws on invalid code', () async {
-@@ -371,7 +370,7 @@
+@@ -240,7 +238,7 @@
+             fail(e.toString());
+           }
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('createUserWithEmailAndPassword', () {
+         test('should create a user with an email and password', () async {
+@@ -261,11 +259,7 @@
+ 
+             var additionalUserInfo = newUserCredential.additionalUserInfo;
+             expect(additionalUserInfo, isA<AdditionalUserInfo>());
+-            if (!kIsWeb && Platform.isWindows) {
+-              // Skip because isNewUser is always false on Windows
+-            } else {
+-              expect(additionalUserInfo?.isNewUser, isTrue);
+-            }
++            expect(additionalUserInfo?.isNewUser, isTrue);
+ 
+             await FirebaseAuth.instance.currentUser?.delete();
+           };
+@@ -350,7 +344,7 @@
+             fail(e.toString());
+           }
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('isSignInWithEmailLink()', () {
+         test('should return true or false', () {
+@@ -379,7 +373,8 @@
              equals(true),
            );
          });
 -      });
++      // TODO: Implement isSignInWithEmailLink
 +      }, skip: true);
  
        group('sendPasswordResetEmail()', () {
          test('should not error', () async {
-@@ -440,7 +439,7 @@
+@@ -410,7 +405,7 @@
+             fail(e.toString());
+           }
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('sendSignInLinkToEmail()', () {
+         test('should send email successfully', () async {
+@@ -448,7 +443,7 @@
              Uri.encodeFull(continueUrl),
            );
          });
--      });
-+      }, skip: true);
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      }, skip: !kIsWeb && isFlutterFirePlatform);
  
        group('languageCode', () {
          test('should change the language code', () async {
-@@ -459,7 +458,9 @@
+@@ -467,7 +462,8 @@
                isNotNull,
              ); // default to the device language or the Firebase projects default language
            },
 -          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
 +          // TODO: Implement fallback locale when setting it as null
 +          skip: true,
-+          //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
          );
  
          test(
-@@ -818,7 +819,7 @@
+@@ -506,7 +502,7 @@
+           },
+           skip: !kIsWeb,
+         );
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('signInAnonymously()', () {
+         test('should sign in anonymously', () async {
+@@ -530,7 +526,7 @@
+ 
+           final userCred = await FirebaseAuth.instance.signInAnonymously();
+           await successCallback(userCred);
+-        }, skip: !kIsWeb && Platform.isWindows,);
++        });
+       });
+ 
+       group('signInWithCredential()', () {
+@@ -542,7 +538,7 @@
+           await FirebaseAuth.instance
+               .signInWithCredential(credential)
+               .then(commonSuccessCallback);
+-        }, skip: !kIsWeb && Platform.isWindows,);
++        });
+ 
+         test('throws if login user is disabled', () async {
+           final credential = EmailAuthProvider.credential(
+@@ -640,7 +636,7 @@
+           expect(idTokenResult.claims!['roles'][0], isA<Map>());
+           expect(idTokenResult.claims!['roles'][0]['role'], 'member');
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group('signInWithEmailAndPassword()', () {
+         test('should login with email and password', () async {
+@@ -733,7 +729,7 @@
+             fail(e.toString());
+           }
+         });
+-      }, skip: !kIsWeb && Platform.isWindows,);
++      });
+ 
+       group(
+         'verifyPhoneNumber()',
+@@ -826,7 +822,7 @@
              skip: kIsWeb || defaultTargetPlatform != TargetPlatform.android,
            );
          },
--        skip: defaultTargetPlatform == TargetPlatform.macOS || kIsWeb,
-+        skip: true,
+-        skip: defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows || kIsWeb,
++        skip: defaultTargetPlatform == TargetPlatform.macOS || isFlutterFirePlatform || kIsWeb,
        );
  
        group('setSettings()', () {
 diff -x flutterfire_repo -dur flutterfire/firebase_auth_user_e2e_test.dart dart/firebase_auth_user_e2e_test.dart
---- flutterfire/firebase_auth_user_e2e_test.dart	2023-09-27 17:16:12.839565191 +0200
-+++ dart/firebase_auth_user_e2e_test.dart	2023-09-27 17:32:29.017094960 +0200
+--- flutterfire/firebase_auth_user_e2e_test.dart	2023-09-27 17:51:37.984265794 +0200
++++ dart/firebase_auth_user_e2e_test.dart	2023-09-27 18:45:17.836783796 +0200
 @@ -1,6 +1,6 @@
 -// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 -// for details. All rights reserved. Use of this source code is governed by a
@@ -111,63 +207,171 @@ diff -x flutterfire_repo -dur flutterfire/firebase_auth_user_e2e_test.dart dart/
 +// that can be found in the LICENSE file.
  
  import 'dart:async';
- import 'package:firebase_auth/firebase_auth.dart';
-@@ -68,7 +68,6 @@
-         // Setup
-         late User user;
-         UserCredential userCredential;
--
-         userCredential =
-             await FirebaseAuth.instance.createUserWithEmailAndPassword(
-           email: email,
-@@ -204,7 +203,9 @@
-               ?.unlink(PhoneAuthProvider.PROVIDER_ID);
-           await FirebaseAuth.instance.currentUser?.delete();
-         },
--        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
-+        // TODO: verifyPhoneNumber()
-+        skip: true,
-+        //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
-       ); // verifyPhoneNumber not supported on web.
  
-       test(
-@@ -595,7 +596,10 @@
-           expect(FirebaseAuth.instance.currentUser!.refreshToken, equals(''));
-         },
-         // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
--        skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
-+        skip: kIsWeb ||
-+            defaultTargetPlatform == TargetPlatform.macOS ||
-+            defaultTargetPlatform == TargetPlatform.windows ||
-+            defaultTargetPlatform == TargetPlatform.linux,
-       );
- 
-       test(
-@@ -617,7 +621,9 @@
-             isFalse,
+@@ -65,7 +65,6 @@
+             email: email,
+             password: testPassword,
            );
-         },
--        skip: !kIsWeb,
-+        skip: !kIsWeb &&
-+            (defaultTargetPlatform != TargetPlatform.linux &&
-+                defaultTargetPlatform != TargetPlatform.windows),
-       );
-     });
+-
+           IdTokenResult result =
+               await userCredential.user!.getIdTokenResult(true);
  
-@@ -1004,7 +1010,6 @@
+@@ -94,7 +93,7 @@
+           }
+           fail('should have thrown an error');
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('getIdTokenResult()', () {
+         test('should return a valid IdTokenResult Object', () async {
+@@ -116,7 +115,7 @@
+           expect(idTokenResult.expirationTime.runtimeType, equals(DateTime));
+           expect(idTokenResult.token!.length, greaterThan(24));
+           expect(idTokenResult.signInProvider, equals('password'));
+-        }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++        });
+         // TODO add custom claims and tenant id tests for id token result
        });
-     });
-   },
--  // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
--  skip: defaultTargetPlatform == TargetPlatform.macOS,
--  );
-+      // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
-+      skip: defaultTargetPlatform == TargetPlatform.macOS);
- }
+ 
+@@ -235,7 +234,7 @@
+                 ?.unlink(PhoneAuthProvider.PROVIDER_ID);
+             await FirebaseAuth.instance.currentUser?.delete();
+           },
+-          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows,
++          skip: kIsWeb || isFlutterFirePlatform,
+         ); // verifyPhoneNumber not supported on web.
+ 
+         test(
+@@ -266,9 +265,9 @@
+ 
+             fail('should have thrown an error');
+           },
+-          skip: defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows,
++          skip: defaultTargetPlatform == TargetPlatform.macOS,
+         );
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('reauthenticateWithCredential()', () {
+         test('should reauthenticate correctly', () async {
+@@ -421,7 +420,7 @@
+ 
+           fail('should have thrown an error');
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('reload()', () {
+         test('should not error', () async {
+@@ -475,7 +474,7 @@
+           // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+           skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+         );
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('unlink()', () {
+         test('should unlink the email address', () async {
+@@ -557,7 +556,7 @@
+           }
+           fail('should have thrown an error');
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('updateEmail()', () {
+         test('should update the email address', () async {
+@@ -573,7 +572,7 @@
+           await FirebaseAuth.instance.currentUser!.updateEmail(email);
+           expect(FirebaseAuth.instance.currentUser!.email, equals(email));
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('updatePassword()', () {
+         test('should update the password', () async {
+@@ -617,7 +616,7 @@
+           }
+           fail('should have thrown an error');
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('refreshToken', () {
+         test(
+@@ -635,11 +634,8 @@
+               isNull,
+             );
+           },
+-          // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+-          // iOS supports it
+-          skip: kIsWeb ||
+-              defaultTargetPlatform == TargetPlatform.macOS ||
+-              defaultTargetPlatform == TargetPlatform.iOS,
++          // This package supports refreshToken
++          skip: true,
+         );
+ 
+         test(
+@@ -663,7 +659,7 @@
+           },
+           skip: !kIsWeb,
+         );
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('user.metadata', () {
+         test(
+@@ -685,7 +681,7 @@
+           expect(metadata?.creationTime, isA<DateTime>());
+           expect(metadata?.creationTime!.year, DateTime.now().year);
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+ 
+       group('updateDisplayName', () {
+         test('updates the user displayName without impacting the photoURL',
+@@ -756,7 +752,7 @@
+           // setting `displayName` on web throws an error
+           skip: kIsWeb ||
+               defaultTargetPlatform == TargetPlatform.iOS ||
+-                  defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows,
++                  defaultTargetPlatform == TargetPlatform.macOS,
+         );
+       });
+ 
+@@ -829,7 +825,7 @@
+           },
+           // setting `photoURL` on web throws an error
+           // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+-          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS  || defaultTargetPlatform == TargetPlatform.windows,
++          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+         );
+       },);
+ 
+@@ -907,7 +903,7 @@
+ 
+             fail('should have thrown an error');
+           },
+-          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows,
++          skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
+         );
+ 
+         // TODO error codes no longer match up on emulator
+@@ -1013,7 +1009,7 @@
+ 
+           fail('Should have thrown an error');
+         });
+-      }, skip: !kIsWeb && defaultTargetPlatform == TargetPlatform.windows,);
++      });
+     },
+     // macOS skipped because it needs keychain sharing entitlement. See: https://github.com/firebase/flutterfire/issues/9538
+     skip: defaultTargetPlatform == TargetPlatform.macOS,
 diff -x flutterfire_repo -dur flutterfire/test_utils.dart dart/test_utils.dart
---- flutterfire/test_utils.dart	2023-09-27 17:16:12.839565191 +0200
-+++ dart/test_utils.dart	2023-09-27 17:32:29.018094964 +0200
-@@ -1,6 +1,6 @@
+--- flutterfire/test_utils.dart	2023-09-27 17:51:37.984265794 +0200
++++ dart/test_utils.dart	2023-09-27 18:02:27.376578537 +0200
+@@ -1,8 +1,9 @@
 -// Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 -// for details. All rights reserved. Use of this source code is governed by a
 -// BSD-style license that can be found in the LICENSE file.
@@ -176,8 +380,11 @@ diff -x flutterfire_repo -dur flutterfire/test_utils.dart dart/test_utils.dart
 +// that can be found in the LICENSE file.
  
  import 'dart:convert';
++import 'dart:io';
  import 'dart:math';
-@@ -14,17 +14,10 @@
+ 
+ import 'package:collection/collection.dart' show IterableExtension;
+@@ -14,17 +15,10 @@
  const String testEmail = 'test@example.com';
  const String testPassword = 'testpassword';
  const String testPhoneNumber = '+447111555666';
@@ -198,3 +405,11 @@ diff -x flutterfire_repo -dur flutterfire/test_utils.dart dart/test_utils.dart
  
  class EmulatorOobCode {
    @protected
+@@ -251,3 +245,6 @@
+ 
+   return base64Url.encode(values).toLowerCase();
+ }
++
++
++bool get isFlutterFirePlatform => Platform.isLinux || Platform.isWindows;
+\ No newline at end of file

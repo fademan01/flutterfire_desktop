@@ -209,7 +209,7 @@ void main() {
             fail(e.toString());
           }
         });
-      }, skip: true);
+      }, skip: !kIsWeb && isFlutterFirePlatform,);
 
       group('checkActionCode()', () {
         test('throws on invalid code', () async {
@@ -222,7 +222,7 @@ void main() {
             fail(e.toString());
           }
         });
-      }, skip: true);
+      }, skip: !kIsWeb && isFlutterFirePlatform);
 
       group('confirmPasswordReset()', () {
         test('throws on invalid code', () async {
@@ -246,17 +246,20 @@ void main() {
 
           Function successCallback = (UserCredential newUserCredential) async {
             expect(newUserCredential.user, isA<User>());
-            User newUser = newUserCredential.user!;
+            final newUser = newUserCredential.user;
 
-            expect(newUser.uid, isA<String>());
-            expect(newUser.email, equals(email));
-            expect(newUser.emailVerified, isFalse);
-            expect(newUser.isAnonymous, isFalse);
-            expect(newUser.uid, equals(FirebaseAuth.instance.currentUser!.uid));
+            expect(newUser?.uid, isA<String>());
+            expect(newUser?.email, equals(email));
+            expect(newUser?.emailVerified, isFalse);
+            expect(newUser?.isAnonymous, isFalse);
+            expect(
+              newUser?.uid,
+              equals(FirebaseAuth.instance.currentUser!.uid),
+            );
 
-            var additionalUserInfo = newUserCredential.additionalUserInfo!;
+            var additionalUserInfo = newUserCredential.additionalUserInfo;
             expect(additionalUserInfo, isA<AdditionalUserInfo>());
-            expect(additionalUserInfo.isNewUser, isTrue);
+            expect(additionalUserInfo?.isNewUser, isTrue);
 
             await FirebaseAuth.instance.currentUser?.delete();
           };
@@ -370,6 +373,7 @@ void main() {
             equals(true),
           );
         });
+      // TODO: Implement isSignInWithEmailLink
       }, skip: true);
 
       group('sendPasswordResetEmail()', () {
@@ -424,22 +428,22 @@ void main() {
           );
 
           // Confirm with the emulator that it triggered an email sending code.
-          final oobCode = (await emulatorOutOfBandCode(
+          final oobCode = await emulatorOutOfBandCode(
             email,
             EmulatorOobCodeType.emailSignIn,
-          ))!;
+          );
           expect(oobCode, isNotNull);
-          expect(oobCode.email, email);
-          expect(oobCode.type, EmulatorOobCodeType.emailSignIn);
+          expect(oobCode?.email, email);
+          expect(oobCode?.type, EmulatorOobCodeType.emailSignIn);
 
           // Confirm the continue url was passed through to backend correctly.
-          final url = Uri.parse(oobCode.oobLink!);
+          final url = Uri.parse(oobCode!.oobLink!);
           expect(
             url.queryParameters['continueUrl'],
             Uri.encodeFull(continueUrl),
           );
         });
-      }, skip: true);
+      }, skip: !kIsWeb && isFlutterFirePlatform);
 
       group('languageCode', () {
         test('should change the language code', () async {
@@ -460,7 +464,6 @@ void main() {
           },
           // TODO: Implement fallback locale when setting it as null
           skip: true,
-          //skip: kIsWeb || defaultTargetPlatform == TargetPlatform.macOS,
         );
 
         test(
@@ -504,14 +507,14 @@ void main() {
       group('signInAnonymously()', () {
         test('should sign in anonymously', () async {
           Future successCallback(UserCredential currentUserCredential) async {
-            var currentUser = currentUserCredential.user!;
+            final currentUser = currentUserCredential.user;
 
             expect(currentUser, isA<User>());
-            expect(currentUser.uid, isA<String>());
-            expect(currentUser.email, isNull);
-            expect(currentUser.isAnonymous, isTrue);
+            expect(currentUser?.uid, isA<String>());
+            expect(currentUser?.email, isNull);
+            expect(currentUser?.isAnonymous, isTrue);
             expect(
-              currentUser.uid,
+              currentUser?.uid,
               equals(FirebaseAuth.instance.currentUser!.uid),
             );
 
@@ -528,7 +531,7 @@ void main() {
 
       group('signInWithCredential()', () {
         test('should login with email and password', () async {
-          var credential = EmailAuthProvider.credential(
+          final credential = EmailAuthProvider.credential(
             email: testEmail,
             password: testPassword,
           );
@@ -538,7 +541,7 @@ void main() {
         });
 
         test('throws if login user is disabled', () async {
-          var credential = EmailAuthProvider.credential(
+          final credential = EmailAuthProvider.credential(
             email: testDisabledEmail,
             password: testPassword,
           );
@@ -581,7 +584,7 @@ void main() {
         });
 
         test('throws if login user is not found', () async {
-          var credential = EmailAuthProvider.credential(
+          final credential = EmailAuthProvider.credential(
             email: generateRandomEmail(),
             password: testPassword,
           );
@@ -610,8 +613,8 @@ void main() {
           final claims = {
             'roles': [
               {'role': 'member'},
-              {'role': 'admin'}
-            ]
+              {'role': 'admin'},
+            ],
           };
 
           await ensureSignedOut();
@@ -777,7 +780,7 @@ void main() {
               await FirebaseAuth.instance.signInAnonymously();
 
               Future<PhoneAuthCredential> getCredential() async {
-                Completer completer = Completer<PhoneAuthCredential>();
+                final completer = Completer<PhoneAuthCredential>();
 
                 unawaited(
                   FirebaseAuth.instance.verifyPhoneNumber(
@@ -810,7 +813,7 @@ void main() {
                   ),
                 );
 
-                return completer.future as FutureOr<PhoneAuthCredential>;
+                return completer.future;
               }
 
               PhoneAuthCredential credential = await getCredential();
@@ -819,7 +822,7 @@ void main() {
             skip: kIsWeb || defaultTargetPlatform != TargetPlatform.android,
           );
         },
-        skip: true,
+        skip: defaultTargetPlatform == TargetPlatform.macOS || isFlutterFirePlatform || kIsWeb,
       );
 
       group('setSettings()', () {

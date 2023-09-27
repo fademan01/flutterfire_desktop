@@ -21,6 +21,7 @@ void main() {
       await Firebase.initializeApp(
         options: kFirebaseOptions,
       );
+
       await FirebaseAuth.instance
           .useAuthEmulator(testEmulatorHost, testEmulatorPort);
     });
