@@ -1,0 +1,48 @@
+diff -x flutterfire_repo -dur flutterfire/firebase_core_e2e_test.dart dart/firebase_core_e2e_test.dart
+--- flutterfire/firebase_core_e2e_test.dart	2023-09-27 16:49:04.287749225 +0200
++++ dart/firebase_core_e2e_test.dart	2023-08-23 16:52:57.675305923 +0200
+@@ -1,6 +1,6 @@
+-// Copyright 2019, the Chromium project authors.  Please see the AUTHORS file
+-// for details. All rights reserved. Use of this source code is governed by a
+-// BSD-style license that can be found in the LICENSE file.
++// Copyright 2021 Invertase Limited. All rights reserved.
++// Use of this source code is governed by a BSD-style license
++// that can be found in the LICENSE file.
+ 
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
+@@ -17,7 +17,7 @@
+ 
+     setUpAll(() async {
+       await Firebase.initializeApp(
+-        options: DefaultFirebaseOptions.currentPlatform,
++        options: kFirebaseOptions,
+       );
+     });
+ 
+@@ -25,14 +25,14 @@
+       List<FirebaseApp> apps = Firebase.apps;
+       expect(apps.length, 1);
+       expect(apps[0].name, testAppName);
+-      expect(apps[0].options, DefaultFirebaseOptions.currentPlatform);
++      expect(apps[0].options, kFirebaseOptions);
+     });
+ 
+     test('Firebase.app()', () async {
+       FirebaseApp app = Firebase.app(testAppName);
+ 
+       expect(app.name, testAppName);
+-      expect(app.options, DefaultFirebaseOptions.currentPlatform);
++      expect(app.options, kFirebaseOptions);
+     });
+ 
+     test('Firebase.app() Exception', () async {
+@@ -47,7 +47,7 @@
+       () async {
+         await Firebase.initializeApp(
+           name: 'SecondaryApp',
+-          options: DefaultFirebaseOptions.currentPlatform,
++          options: kFirebaseOptions,
+         );
+ 
+         expect(Firebase.apps.length, 2);
