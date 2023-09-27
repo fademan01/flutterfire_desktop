@@ -9,7 +9,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:tests/firebase_options.dart';
 
 import 'firebase_auth_instance_e2e_test.dart' as instance_tests;
-// import 'firebase_auth_multi_factor_e2e_test.dart' as multi_factor_tests;
+import 'firebase_auth_multi_factor_e2e_test.dart' as multi_factor_tests;
 import 'firebase_auth_user_e2e_test.dart' as user_tests;
 import 'test_utils.dart';
 
@@ -57,6 +57,6 @@ void main() {
 
     instance_tests.main();
     user_tests.main();
-    // multi_factor_tests.main();
+    multi_factor_tests.main();
   });
 }
