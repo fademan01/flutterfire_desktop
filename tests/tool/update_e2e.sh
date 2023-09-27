@@ -25,5 +25,5 @@ cp -r "$FLUTTERFIRE_REPO_PATH"/tests/integration_test/"$FIREBASE_PACKAGE_NAME" "
 
 pushd "$DART_REPO_E2E_PATH"
 # Apply patch ignoring first level from the diff (flutterfire and dart subfolders)
-patch -p1  < "$ROOT_DIR"/patches/e2e-$FIREBASE_PACKAGE_NAME.patch
+patch -p1 --merge  < "$ROOT_DIR"/patches/e2e-$FIREBASE_PACKAGE_NAME.patch
 popd
