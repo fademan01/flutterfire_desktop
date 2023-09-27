@@ -1,0 +1,1 @@
+firebase_auth: 5834f944496b51c427b477bb59a769c9ceeeab86 v4.6.3
